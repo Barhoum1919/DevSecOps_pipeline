@@ -14,16 +14,21 @@ pipeline {
 
     stages {
 
-       stage('Checkout Code') {
-    steps {
-        script {
-            withVault([vaultSecrets: [[path: "${VAULT_SECRET_GITHUB}", secretValues: [[envVar: 'GITHUB_TOKEN', vaultKey: 'token']]]]]) {
-                git credentialsId: '', url: "https://${GITHUB_TOKEN}@github.com/Barhoum1919/DevSecOps_pipeline.git", branch: 'main'
+        stage('Checkout Code') {
+            steps {
+                script {
+                    withVault([vaultSecrets: [[path: "${VAULT_SECRET_GITHUB}", secretValues: [[envVar: 'GITHUB_TOKEN', vaultKey: 'token']]]]]) {
+                        checkout([$class: 'GitSCM',
+                            branches: [[name: '*/main']],
+                            userRemoteConfigs: [[
+                                url: "${GIT_REPO}",
+                                credentials: [username: 'Barhoum1919', password: "${GITHUB_TOKEN}"]
+                            ]]
+                        ])
+                    }
+                }
             }
         }
-    }
-}
-
 
         stage('Prepare') {
             steps {
