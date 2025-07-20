@@ -4,12 +4,12 @@ pipeline {
     environment {
         IMAGE_NAME = "ibrahimdarghouthi1919/python-app"
         REGISTRY = "docker.io"
-        GIT_REPO = "https://github.com/Barhoum1919/DevSecOps_pipeline.git"  
-        GITOPS_REPO = "git@github.com:Barhoum1919/sec_gitops.git"            
-        VAULT_SECRET_GITHUB = 'secret/github'
+        GIT_REPO = "https://github.com/Barhoum1919/DevSecOps_pipeline.git"
+        GITOPS_REPO = "git@github.com:Barhoum1919/sec_gitops.git"
+        VAULT_SECRET_GITHUB = 'secret/github'       
         VAULT_SECRET_DOCKERHUB = 'secret/dockerhub'
         VAULT_SECRET_GITOPS = 'secret/gitops'
-        VAULT_SECRET_SONAR = 'secret/sonarqube' 
+        VAULT_SECRET_SONAR = 'secret/sonarqube'
     }
 
     stages {
@@ -17,7 +17,11 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 script {
-                    withVault([vaultSecrets: [[path: "${VAULT_SECRET_GITHUB}", secretValues: [[envVar: 'GITHUB_TOKEN', vaultKey: 'token']]]]]) {
+                    withVault([vaultSecrets: [[
+                        path: "${VAULT_SECRET_GITHUB}",
+                        engineVersion: 2,
+                        secretValues: [[envVar: 'GITHUB_TOKEN', vaultKey: 'token']]
+                    ]]]) {
                         checkout([$class: 'GitSCM',
                             branches: [[name: '*/main']],
                             userRemoteConfigs: [[
@@ -44,7 +48,11 @@ pipeline {
             }
             steps {
                 script {
-                    withVault([vaultSecrets: [[path: "${VAULT_SECRET_SONAR}", secretValues: [[envVar: 'SONAR_TOKEN', vaultKey: 'token']]]]]) {
+                    withVault([vaultSecrets: [[
+                        path: "${VAULT_SECRET_SONAR}",
+                        engineVersion: 2,
+                        secretValues: [[envVar: 'SONAR_TOKEN', vaultKey: 'token']]
+                    ]]]) {
                         def scannerHome = tool name: 'SonarQube Scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                         withSonarQubeEnv('SonarQube') {
                             sh """
@@ -101,10 +109,14 @@ pipeline {
         stage('Push Image to Docker Hub') {
             steps {
                 script {
-                    withVault([vaultSecrets: [[path: "${VAULT_SECRET_DOCKERHUB}", secretValues: [
-                        [envVar: 'DOCKER_USER', vaultKey: 'username'],
-                        [envVar: 'DOCKER_PASS', vaultKey: 'password']
-                    ]]]]) {
+                    withVault([vaultSecrets: [[
+                        path: "${VAULT_SECRET_DOCKERHUB}",
+                        engineVersion: 2,
+                        secretValues: [
+                            [envVar: 'DOCKER_USER', vaultKey: 'username'],
+                            [envVar: 'DOCKER_PASS', vaultKey: 'password']
+                        ]
+                    ]]]) {
                         sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                         sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
                     }
@@ -115,7 +127,11 @@ pipeline {
         stage('GitOps Update') {
             steps {
                 script {
-                    withVault([vaultSecrets: [[path: "${VAULT_SECRET_GITOPS}", secretValues: [[envVar: 'SSH_KEY', vaultKey: 'ssh_private_key']]]]]) {
+                    withVault([vaultSecrets: [[
+                        path: "${VAULT_SECRET_GITOPS}",
+                        engineVersion: 2,
+                        secretValues: [[envVar: 'SSH_KEY', vaultKey: 'ssh_private_key']]
+                    ]]]) {
                         sh 'rm -rf temp-repo'
                         sh "mkdir -p ~/.ssh && echo \"$SSH_KEY\" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa"
                         sh "ssh-keyscan github.com >> ~/.ssh/known_hosts"
@@ -139,7 +155,7 @@ pipeline {
         stage('Sync ArgoCD') {
             steps {
                 script {
-                    sh "argocd app sync python-app"  
+                    sh "argocd app sync python-app"
                 }
             }
         }
