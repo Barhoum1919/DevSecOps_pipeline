@@ -14,27 +14,7 @@ pipeline {
     }
 
     stages {
-  stages {
-        stage('Get Secrets') {
-            steps {
-                withVault([configuration: [
-                    vaultUrl: env.VAULT_ADDR,
-                    vaultCredentialId: 'vault-approle',
-                    engineVersion: 2
-                ], vaultSecrets: [
-                    [path: 'secret/data/github', secretValues: [
-                        [envVar: 'GITHUB_TOKEN', vaultKey: 'token']
-                    ]],
-                    [path: 'secret/data/dockerhub', secretValues: [
-                        [envVar: 'DOCKER_USER', vaultKey: 'username'],
-                        [envVar: 'DOCKER_PASS', vaultKey: 'password']
-                    ]]
-                ]]) {
-                    sh 'echo $GITHUB_TOKEN | head -c 5' // Test secret retrieval
-                }
-            }
-        }
-    }
+
         stage('Checkout Code') {
             steps {
                 script {
