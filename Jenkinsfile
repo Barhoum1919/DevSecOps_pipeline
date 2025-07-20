@@ -14,33 +14,13 @@ pipeline {
 
     stages {
 
-stage('Checkout Code') {
-    steps {
-        script {
-            // Inject Vault secret (GITHUB_TOKEN) as env variable
-            withVault([
-                vaultSecrets: [[
-                    path: "${VAULT_SECRET_GITHUB}",
-                    engineVersion: 2,
-                    secretValues: [[envVar: 'GITHUB_TOKEN', vaultKey: 'token']]
-                ]],
-                // Make sure you specify your Vault AppRole Jenkins credential ID here
-                vaultCredentialId: 'vault-approle'
-            ]) {
-                // Use SSH or HTTPS Git credential configured in Jenkins Credentials store
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: [[
-                        url: "${GIT_REPO}",
-                        // Use Jenkins credential ID, NOT username/password here
-                        credentialsId: 'github-ssh-credential-id'  
-                    ]]
-                ])
+        stage('Checkout Code') {
+            steps {
+                script {
+                    git url: "${GIT_REPO}", branch: 'main'
+                }
             }
         }
-    }
-}
 
 
         stage('Prepare') {
